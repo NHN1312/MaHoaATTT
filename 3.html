@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mã hóa và Giải mã</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .input-section, .output-section {
+            flex: 1;
+            min-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .input-section {
+            border-right: 2px solid #ddd;
+            padding-right: 20px;
+        }
+
+        .output-section {
+            padding-left: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            flex-basis: 100%;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, select, button, textarea {
+            width: calc(100% - 22px);
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 6px;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .result > div {
+            flex: 1;
+        }
+
+        .result h3 {
+            color: #2c3e50;
+        }
+
+        .result textarea {
+            height: 150px;
+        }
+
+        #clearFileButton {
+            display: none;
+            background-color: #e74c3c;
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        #clearFileButton:hover {
+            background-color: #c0392b;
+        }
+
+        .save-button {
+            margin-top: 20px;
+            background-color: #27ae60;
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        .save-button:hover {
+            background-color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Mã hóa và Giải mã</h1>
+
+    <div class="input-section">
+        <label for="inputText">Nhập văn bản hoặc tải lên file:</label>
+        <textarea id="inputText" placeholder="Nhập văn bản tại đây..."></textarea>
+
+        <label for="fileInput">Tải file văn bản (.txt):</label>
+        <input type="file" id="fileInput" accept=".txt">
+
+        <button id="clearFileButton" onclick="clearFile()">Xóa tệp đã chọn</button>
+
+        <label for="encryptionType">Chọn kiểu mã hóa:</label>
+        <select id="encryptionType" onchange="toggleKeyInput()">
+            <option value="caesar">Caesar</option>
+            <option value="substitution">Thay thế</option>
+            <option value="affine">Affine</option> 
+        </select>
+
+        <div id="caesarKeyInput">
+            <label for="key">Nhập khóa K (0 - 25):</label>
+            <input type="number" id="key" min="0" max="25" value="0">
+            <button onclick="generateRandomKey()">Sinh khóa ngẫu nhiên (Caesar)</button>
+        </div>
+
+        <div id="substitutionKeyInput" style="display:none;">
+            <label for="substitutionKey">Bảng thay thế (26 ký tự):</label>
+            <input type="text" id="substitutionKey" value="QWERTYUIOPASDFGHJKLZXCVBNM">
+            <button onclick="generateRandomSubstitutionKey()">Sinh khóa ngẫu nhiên (Thay thế)</button>
+        </div>
+
+        <div id="affineKeyInput" style="display:none;">
+            <label for="affineKeyA">Nhập khóa A (phải là số nguyên có gcd(a, 26) = 1):</label>
+            <input type="number" id="affineKeyA" value="1">
+        
+            <label for="affineKeyB">Nhập khóa B (0 - 25):</label>
+            <input type="number" id="affineKeyB" min="0" max="25" value="0">
+            
+            <button onclick="generateRandomAffineKey()">Sinh khóa ngẫu nhiên (Affine)</button>
+        </div>
+
+        <button onclick="encrypt()">Mã hóa</button>
+        <button onclick="decrypt()">Giải mã</button>
+    </div>
+
+    <div class="output-section">
+        <div class="result">
+            <div>
+                <h3>Bản mã:</h3>
+                <textarea id="encryptedText" readonly></textarea>
+            </div>
+            <div>
+                <h3>Bản gốc (Giải mã):</h3>
+                <textarea id="decryptedText" readonly></textarea>
+            </div>
+        </div>
+
+        <button class="save-button" onclick="saveEncryptedText()">Lưu bản mã</button>
+    </div>
+</div>
+
+<script>
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    // Đọc file và hiển thị nội dung vào textarea
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                document.getElementById('inputText').value = fileContent;
+                document.getElementById('clearFileButton').style.display = 'inline-block'; // Hiển thị nút xóa tệp
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    // Xóa file đã chọn và nội dung văn bản
+    function clearFile() {
+        document.getElementById('fileInput').value = ''; // Xóa file đã chọn
+        document.getElementById('inputText').value = ''; // Xóa nội dung văn bản
+        document.getElementById('clearFileButton').style.display = 'none'; // Ẩn nút xóa tệp
+    }
+
+    // Hiển thị/ẩn các trường nhập liệu dựa trên kiểu mã hóa
+    function toggleKeyInput() {
+    const encryptionType = document.getElementById('encryptionType').value;
+    document.getElementById('caesarKeyInput').style.display = encryptionType === 'caesar' ? 'block' : 'none';
+    document.getElementById('substitutionKeyInput').style.display = encryptionType === 'thay thế' ? 'block' : 'none';
+    document.getElementById('affineKeyInput').style.display = encryptionType === 'affine' ? 'block' : 'none';
+}
+
+    // Mã hóa dựa trên kiểu được chọn
+    function encrypt() {
+    const encryptionType = document.getElementById('encryptionType').value;
+
+    if (encryptionType === 'caesar') {
+        encryptCaesar();
+    } else if (encryptionType === 'substitution') {
+        encryptSubstitution();
+    } else if (encryptionType === 'affine') {
+        encryptAffine();
+    }
+}
+
+    // Giải mã dựa trên kiểu được chọn
+    function decrypt() {
+    const encryptionType = document.getElementById('encryptionType').value;
+
+    if (encryptionType === 'caesar') {
+        decryptCaesar();
+    } else if (encryptionType === 'substitution') {
+        decryptSubstitution();
+    } else if (encryptionType === 'affine') {
+        decryptAffine();
+    }
+}
+
+    // Mã hóa Caesar
+    function encryptCaesar() {
+        let inputText = document.getElementById('inputText').value.toUpperCase();
+        let key = parseInt(document.getElementById('key').value);
+        let encryptedText = '';
+
+        for (let i = 0; i < inputText.length; i++) {
+            let char = inputText.charAt(i);
+
+            if (alphabet.includes(char)) {
+                let index = (alphabet.indexOf(char) + key) % 26;
+                encryptedText += alphabet.charAt(index);
+            } else {
+                encryptedText += char; // Non-alphabetic characters stay the same
+            }
+        }
+
+        document.getElementById('encryptedText').value = encryptedText;
+    }
+
+    // Giải mã Caesar
+    function decryptCaesar() {
+        let encryptedText = document.getElementById('encryptedText').value.toUpperCase();
+        let key = parseInt(document.getElementById('key').value);
+        let decryptedText = '';
+
+        for (let i = 0; i < encryptedText.length; i++) {
+            let char = encryptedText.charAt(i);
+
+            if (alphabet.includes(char)) {
+                let index = (alphabet.indexOf(char) - key + 26) % 26;
+                decryptedText += alphabet.charAt(index);
+            } else {
+                decryptedText += char; // Non-alphabetic characters stay the same
+            }
+        }
+
+        document.getElementById('decryptedText').value = decryptedText;
+    }
+
+    // Mã hóa Thay thế
+    function encryptSubstitution() {
+        let inputText = document.getElementById('inputText').value.toUpperCase();
+        let key = document.getElementById('substitutionKey').value.toUpperCase();
+        let encryptedText = '';
+
+        for (let i = 0; i < inputText.length; i++) {
+            let char = inputText.charAt(i);
+
+            if (alphabet.includes(char)) {
+                let index = alphabet.indexOf(char);
+                encryptedText += key.charAt(index);
+            } else {
+                encryptedText += char;
+            }
+        }
+
+        document.getElementById('encryptedText').value = encryptedText;
+    }
+
+    // Giải mã Thay thế
+    function decryptSubstitution() {
+        let encryptedText = document.getElementById('encryptedText').value.toUpperCase();
+        let key = document.getElementById('substitutionKey').value.toUpperCase();
+        let decryptedText = '';
+
+        for (let i = 0; i < encryptedText.length; i++) {
+            let char = encryptedText.charAt(i);
+
+            if (key.includes(char)) {
+                let index = key.indexOf(char);
+                decryptedText += alphabet.charAt(index);
+            } else {
+                decryptedText += char;
+            }
+        }
+
+        document.getElementById('decryptedText').value = decryptedText;
+    }
+     // Mã hóa Affine
+    function encryptAffine() {
+        const inputText = document.getElementById('inputText').value.toUpperCase();
+        const a = parseInt(document.getElementById('affineKeyA').value);
+        const b = parseInt(document.getElementById('affineKeyB').value);
+        let encryptedText = '';
+
+    // Kiểm tra gcd(a, 26)
+        if (gcd(a, 26) !== 1) {
+            alert('Khóa A không hợp lệ. gcd(a, 26) phải bằng 1.');
+            return;
+        }
+
+        for (let i = 0; i < inputText.length; i++) {
+        let char = inputText.charAt(i);
+
+            if (alphabet.includes(char)) {
+            let x = alphabet.indexOf(char); // Chuyển ký tự thành chỉ số
+            let encryptedChar = (a * x + b) % 26; // Công thức Affine
+            encryptedText += alphabet.charAt(encryptedChar);
+            } else {
+            encryptedText += char;
+        }
+    }
+
+        document.getElementById('encryptedText').value = encryptedText;
+}
+
+// Giải mã Affine
+    function decryptAffine() {
+        const encryptedText = document.getElementById('encryptedText').value.toUpperCase();
+        const a = parseInt(document.getElementById('affineKeyA').value);
+        const b = parseInt(document.getElementById('affineKeyB').value);
+        let decryptedText = '';
+
+    // Kiểm tra gcd(a, 26)
+        if (gcd(a, 26) !== 1) {
+            alert('Khóa A không hợp lệ. gcd(a, 26) phải bằng 1.');
+            return;
+        }
+
+    // Tính giá trị nghịch đảo modular của a
+        const aInverse = modInverse(a, 26);
+
+        for (let i = 0; i < encryptedText.length; i++) {
+            let char = encryptedText.charAt(i);
+
+            if (alphabet.includes(char)) {
+                let y = alphabet.indexOf(char);
+                let decryptedChar = (aInverse * (y - b + 26)) % 26; // Giải mã bằng công thức Affine
+                decryptedText += alphabet.charAt(decryptedChar);
+            } else {
+                decryptedText += char;
+            }
+        }
+
+        document.getElementById('decryptedText').value = decryptedText;
+}
+
+// Hàm tính gcd
+    function gcd(a, b) {
+        return b === 0 ? a : gcd(b, a % b);
+    }
+
+// Hàm tính nghịch đảo modular
+    function modInverse(a, m) {
+        a = a % m;
+        for (let x = 1; x < m; x++) {
+            if ((a * x) % m === 1) {
+            return x;
+            }
+        }
+        return 1; // Trường hợp a và m không có gcd = 1, trả về 1 (không nên xảy ra nếu kiểm tra gcd đã thực hiện)
+}
+
+// Sinh khóa ngẫu nhiên cho Affine
+    function generateRandomAffineKey() {
+        const validAValues = [1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25]; // Các giá trị a thỏa mãn gcd(a, 26) = 1
+        const randomA = validAValues[Math.floor(Math.random() * validAValues.length)];
+        const randomB = Math.floor(Math.random() * 26);
+        document.getElementById('affineKeyA').value = randomA;
+        document.getElementById('affineKeyB').value = randomB;
+    }
+
+
+    // Sinh khóa ngẫu nhiên cho Caesar
+    function generateRandomKey() {
+        const randomKey = Math.floor(Math.random() * 26); // Số ngẫu nhiên từ 0 đến 25
+        document.getElementById('key').value = randomKey;
+    }
+
+    // Sinh bảng thay thế ngẫu nhiên (26 ký tự)
+    function generateRandomSubstitutionKey() {
+        let shuffled = alphabet.split('').sort(() => Math.random() - 0.5).join(''); // Trộn ngẫu nhiên chuỗi alphabet
+        document.getElementById('substitutionKey').value = shuffled;
+    }
+
+    // Lưu bản mã vào file
+    function saveEncryptedText() {
+        let encryptedText = document.getElementById('encryptedText').value;
+        let blob = new Blob([encryptedText], { type: 'text/plain;charset=utf-8' });
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'encrypted.txt';
+        link.click();
+    }
+</script>
+
+</body>
+</html>
