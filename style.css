@@ -1,0 +1,116 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.input-section, .output-section {
+    flex: 1;
+    min-width: 300px;
+    margin-bottom: 20px;
+}
+
+.input-section {
+    border-right: 2px solid #ddd;
+    padding-right: 20px;
+}
+
+.output-section {
+    padding-left: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    flex-basis: 100%;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+input, select, button, textarea {
+    width: calc(100% - 22px);
+    padding: 8px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 6px;
+    transition: background-color 0.3s;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+.result {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.result > div {
+    flex: 1;
+}
+
+.result h3 {
+    color: #2c3e50;
+}
+
+.result textarea {
+    height: 150px;
+}
+
+#clearFileButton {
+    display: none;
+    background-color: #e74c3c;
+    font-size: 12px;
+    padding: 6px;
+}
+
+#clearFileButton:hover {
+    background-color: #c0392b;
+}
+
+.save-button {
+    margin-top: 20px;
+    background-color: #27ae60;
+    font-size: 12px;
+    padding: 6px;
+}
+
+.save-button:hover {
+    background-color: #2ecc71;
+}
